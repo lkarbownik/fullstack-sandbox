@@ -1,90 +1,89 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback, useContext } from 'react'
 import { makeStyles } from '@material-ui/styles'
-import { TextField, Card, CardContent, CardActions, Button, Typography} from '@material-ui/core'
-import DeleteIcon from '@material-ui/icons/Delete'
+import {
+  Card,
+  CardContent,
+  CardActions,
+  Button,
+  Typography,
+} from '@material-ui/core'
 import AddIcon from '@material-ui/icons/Add'
+import { v4 as uuid } from 'uuid'
+import ToDoAPI from 'todos/services/ToDoAPI'
+import ToDo from 'todos/components/ToDo'
+import { SnackbarContext } from 'common/components/SnackbarContainer'
 
 const useStyles = makeStyles({
   card: {
-    margin: '1rem'
-  },
-  todoLine: {
-    display: 'flex',
-    alignItems: 'center'
+    margin: '1rem',
   },
   textField: {
-    flexGrow: 1
+    flexGrow: 1,
   },
   standardSpace: {
-    margin: '8px'
+    margin: '8px',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    flexGrow: 1
-  }
+    flexGrow: 1,
+  },
 })
 
-export const ToDoListForm = ({ toDoList, saveToDoList }) => {
+export const ToDoListForm = ({ toDoListId, toDoListTitle }) => {
   const classes = useStyles()
-  const [todos, setTodos] = useState(toDoList.todos)
+  const [toDos, setToDos] = useState([])
+  const [fetchTrigger, setFetchTrigger] = useState(uuid())
+  const { displaySnackbar } = useContext(SnackbarContext)
+  const errorHandler = useCallback(
+    () =>
+      displaySnackbar(
+        'There was an error while communicating with API',
+        'error'
+      ),
+    [displaySnackbar]
+  )
 
-  const handleSubmit = event => {
-    event.preventDefault()
-    saveToDoList(toDoList.id, { todos })
-  }
+  useEffect(() => {
+    ToDoAPI.get({ toDoListId })
+      .then((todos) => {
+        setToDos(todos)
+      })
+      .catch(errorHandler)
+  }, [toDoListId, fetchTrigger, errorHandler])
+
+  const handleSubmit = (event) => event.preventDefault()
+  const triggerFetch = () => setFetchTrigger(uuid())
+  const deleteToDo = (id) =>
+    ToDoAPI.delete(id).then(triggerFetch).catch(errorHandler)
+  const createToDo = (toDo) =>
+    ToDoAPI.create(toDo).then(triggerFetch).catch(errorHandler)
+  const updateToDo = (toDo) =>
+    ToDoAPI.update(toDo).then(triggerFetch).catch(errorHandler)
 
   return (
     <Card className={classes.card}>
       <CardContent>
-        <Typography component='h2'>
-          {toDoList.title}
-        </Typography>
+        <Typography component="h2">{toDoListTitle}</Typography>
         <form onSubmit={handleSubmit} className={classes.form}>
-          {todos.map((name, index) => (
-            <div key={index} className={classes.todoLine}>
-              <Typography className={classes.standardSpace} variant='h6'>
-                {index + 1}
-              </Typography>
-              <TextField
-                label='What to do?'
-                value={name}
-                onChange={event => {
-                  setTodos([ // immutable update
-                    ...todos.slice(0, index),
-                    event.target.value,
-                    ...todos.slice(index + 1)
-                  ])
-                }}
-                className={classes.textField}
-              />
-              <Button
-                size='small'
-                color='secondary'
-                className={classes.standardSpace}
-                onClick={() => {
-                  setTodos([ // immutable delete
-                    ...todos.slice(0, index),
-                    ...todos.slice(index + 1)
-                  ])
-                }}
-              >
-                <DeleteIcon />
-              </Button>
-            </div>
+          {toDos.map((toDo, index) => (
+            <ToDo
+              key={toDo.id}
+              index={index + 1}
+              toDo={toDo}
+              onChange={updateToDo}
+              onDelete={() => deleteToDo(toDo.id)}
+            />
           ))}
           <CardActions>
             <Button
-              type='button'
-              color='primary'
+              type="button"
+              color="primary"
               onClick={() => {
-                setTodos([...todos, ''])
+                createToDo({ todoListId: toDoListId, title: '' })
               }}
             >
               Add Todo <AddIcon />
-            </Button>
-            <Button type='submit' variant='contained' color='primary'>
-              Save
             </Button>
           </CardActions>
         </form>

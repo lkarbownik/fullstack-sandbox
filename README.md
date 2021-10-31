@@ -10,6 +10,27 @@ NodeJS - https://nodejs.org/en/download/
 
 ## Getting started
 
+### Database provisioning
+
+- Install docker: [Get Docker](https://docs.docker.com/get-docker/)
+- Run `docker-compose up -d ` in the root directory of the repository
+
+
+Alternatively:
+
+- Setup local mysql database instance
+- Update connection parameters in `/backend/config/config.json`
+
+### Migrations
+
+To create a database and run migrations:
+
+-  `npm run db:migrate`
+
+To seed database with test data:
+
+- `npm run db:seed`
+
 ### To start the backend:
 
  - Navigate to the backend folder

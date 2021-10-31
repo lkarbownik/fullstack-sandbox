@@ -1,0 +1,10 @@
+{
+  "development": {
+    "username": "root",
+    "password": "root",
+    "database": "todo",
+    "host": "127.0.0.1",
+    "port": "33060",
+    "dialect": "mysql"
+  }
+}
